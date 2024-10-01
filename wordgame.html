@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Word Challenge Game</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, orange, blue);
+            background-repeat: no-repeat;
+            background-size: 100% 300%;
+            font-family: 'Roboto', sans-serif;
+            color: #fff;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevent scroll during celebration */
+        }
+        #game-container {
+            display: none;
+            margin-top: 150px; /* Increased margin-top for spacing */
+        }
+        #start-screen {
+            margin-top: 50px;
+        }
+        button {
+            background-color: #fff;
+            color: #4a90e2;
+            border: none;
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #f1f1f1;
+        }
+        #word-display {
+            font-size: 48px;
+            margin: 50px 0 20px 0;
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+        }
+        #feedback {
+            font-size: 24px;
+            color: yellow;
+            height: 30px;
+        }
+        #score {
+            font-size: 24px;
+            margin-top: 20px;
+        }
+        /* Reduced font size for word progress */
+        #word-progress {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+        #end-screen {
+            display: none;
+            margin-top: 50px;
+        }
+        #celebration, #perfect-celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            flex-direction: column;
+        }
+        #celebration h1, #perfect-celebration h1 {
+            font-size: 64px;
+            color: gold;
+            text-shadow: 2px 2px 5px #000;
+            animation: scaleUp 1s ease-in-out;
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+            margin: 0;
+        }
+        #perfect-celebration h1 {
+            font-size: 80px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes scaleUp {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        /* Confetti animation */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: gold;
+            animation: confetti 5s linear infinite;
+        }
+        @keyframes confetti {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(800px) rotate(720deg); opacity: 0; }
+        }
+        pre.ascii-art {
+            font-family: 'Courier New', Courier, monospace;
+            color: #fff;
+            font-size: 12px;
+            line-height: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="start-screen">
+        <pre class="ascii-art">
+               _                          
+__        __  | |                         
+\ \      / /__| | ___ ___  _ __ ___   ___ 
+ \ \ /\ / / _ \ |/ __/ _ \| '_ ` _ \ / _ \
+  \ V  V /  __/ | (_| (_) | | | | | |  __/
+   \_/\_/ \___|_|\___\___/|_| |_| |_|\___|
+                                        
+        </pre>
+        <h1>Word Challenge Game!</h1>
+        <p>Select the number of words you want to play with:</p>
+        <button onclick="startGame(10)">10 Words</button>
+        <button onclick="startGame(20)">20 Words</button>
+    </div>
+
+    <div id="game-container">
+        <div id="word-display"></div>
+        <div id="feedback"></div>
+        <button onclick="answer(true)">Correct</button>
+        <button onclick="answer(false)">Next Time</button>
+        <div id="word-progress"></div>
+        <div id="score"></div>
+    </div>
+
+    <div id="end-screen">
+        <pre class="ascii-art">
+ ___  ___ ___  _ __ ___ 
+/ __|/ __/ _ \| '__/ _ \
+\__ \ (_| (_) | | |  __/
+|___/\___\___/|_|  \___|
+                                                           
+        </pre>
+        <h1>Game Over!</h1>
+        <p id="final-score"></p>
+        <button onclick="restartGame()">Play Again</button>
+    </div>
+
+    <div id="celebration">
+        <h1>Great Job!</h1>
+    </div>
+
+    <!-- Perfect Score Celebration -->
+    <div id="perfect-celebration">
+        <h1>Perfect Score!</h1>
+        <!-- Confetti -->
+    </div>
+
+    <script>
+        const wordsList = [
+            'the', 'of', 'and', 'a', 'to', 'bat', 'cat', 'sat', 'in', 'is', 'you',
+            'that', 'it', 'cap', 'nap', 'map', 'he', 'was', 'for', 'on', 'are',
+            'cab', 'lab', 'jab', 'as', 'with', 'his', 'they', 'I', 'had', 'dad',
+            'sad', 'at', 'be', 'this', 'have', 'from', 'bag', 'rag', 'wag', 'or',
+            'one', 'had', 'by', 'word', 'cap', 'nap', 'map', 'but', 'not', 'what',
+            'all', 'were', 'bed', 'fed', 'led', 'we', 'when', 'your', 'can', 'said',
+            'leg', 'beg', 'peg', 'there', 'use', 'an', 'each', 'which', 'pen', 'hen',
+            'ten', 'she', 'do', 'how', 'their', 'if', 'pet', 'vet', 'let', 'will',
+            'up', 'other', 'about', 'out', 'fib', 'rib', 'bib', 'many', 'then',
+            'them', 'these', 'so', 'kid', 'hid', 'lid', 'some', 'her', 'would',
+            'make', 'like', 'big', 'pig', 'wig', 'him', 'into', 'time', 'has',
+            'look', 'bin', 'pin', 'chin', 'two', 'more', 'write', 'go', 'see',
+            'fun', 'sun', 'run', 'number', 'no', 'way', 'could', 'people', 'ship',
+            'dish', 'fish', 'my', 'than', 'first', 'water', 'been', 'chin', 'child',
+            'inch', 'call', 'who', 'am', 'its', 'now', 'thank', 'smooth', 'month',
+            'find', 'long', 'down', 'day', 'did', 'grab', 'grape', 'great', 'get',
+            'come', 'made', 'may', 'part', 'brick', 'brush', 'broom', 'over', 'new',
+            'sound', 'take', 'only', 'small', 'smell', 'smile', 'little', 'work',
+            'know', 'place', 'year', 'print', 'pretty', 'prize', 'live', 'me',
+            'back', 'give', 'most', 'trick', 'tree', 'treat', 'very', 'after',
+            'thing', 'our', 'just', 'spell', 'spin', 'spend', 'name', 'good',
+            'sentence', 'man', 'think', 'stir', 'star', 'stop'
+        ];
+
+        let gameWords = [];
+        let currentWordIndex = 0;
+        let score = 0;
+        let attemptsLeft = 2;
+
+        function startGame(wordCount) {
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('game-container').style.display = 'block';
+            score = 0;
+            currentWordIndex = 0;
+            document.getElementById('score').innerText = `Score: ${score}`;
+            document.getElementById('feedback').innerText = '';
+            document.getElementById('word-progress').innerText = '';
+            // Shuffle and select words
+            const shuffledWords = shuffleArray([...new Set(wordsList)]);
+            gameWords = shuffledWords.slice(0, wordCount);
+            showWord();
+        }
+
+        function showWord() {
+            if (currentWordIndex < gameWords.length) {
+                document.getElementById('word-display').innerText = gameWords[currentWordIndex];
+                document.getElementById('feedback').innerText = '';
+                document.getElementById('word-progress').innerText = `Word: ${currentWordIndex + 1}/${gameWords.length}`;
+                attemptsLeft = 2;
+            } else {
+                endGame();
+            }
+        }
+
+        function answer(isCorrect) {
+            if (isCorrect) {
+                if (attemptsLeft === 2) {
+                    score += 2;
+                    document.getElementById('score').innerText = `Score: ${score}`;
+                    celebrate();
+                    setTimeout(() => {
+                        currentWordIndex++;
+                        showWord();
+                    }, 1500); // Increased from 1000ms to 1500ms
+                } else if (attemptsLeft === 1) {
+                    score += 1;
+                    document.getElementById('score').innerText = `Score: ${score}`;
+                    currentWordIndex++;
+                    showWord();
+                }
+            } else {
+                attemptsLeft--;
+                if (attemptsLeft > 0) {
+                    document.getElementById('feedback').innerText = 'Try again!';
+                } else {
+                    currentWordIndex++;
+                    showWord();
+                }
+            }
+        }
+
+        function endGame() {
+            const maxScore = gameWords.length * 2;
+            if (score === maxScore) {
+                perfectScoreCelebrate();
+            } else {
+                document.getElementById('game-container').style.display = 'none';
+                document.getElementById('end-screen').style.display = 'block';
+                document.getElementById('final-score').innerText = `Your final score is ${score} out of ${maxScore}!`;
+            }
+        }
+
+        function restartGame() {
+            document.getElementById('end-screen').style.display = 'none';
+            document.getElementById('start-screen').style.display = 'block';
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function celebrate() {
+            const celebrationDiv = document.getElementById('celebration');
+            celebrationDiv.style.display = 'flex';
+            setTimeout(() => {
+                celebrationDiv.style.display = 'none';
+            }, 1500); // Increased from 1000ms to 1500ms
+        }
+
+        function perfectScoreCelebrate() {
+            document.getElementById('game-container').style.display = 'none';
+            const perfectDiv = document.getElementById('perfect-celebration');
+            perfectDiv.style.display = 'flex';
+
+            // Generate confetti
+            for (let i = 0; i < 100; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.left = Math.random() * window.innerWidth + 'px';
+                confetti.style.backgroundColor = getRandomColor();
+                confetti.style.animationDelay = Math.random() * 5 + 's';
+                perfectDiv.appendChild(confetti);
+            }
+
+            // Add click event to proceed
+            perfectDiv.addEventListener('click', () => {
+                perfectDiv.style.display = 'none';
+                perfectDiv.innerHTML = '<h1>Perfect Score!</h1>'; // Reset content
+                restartGame();
+            });
+        }
+
+        function getRandomColor() {
+            const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5',
+                            '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50',
+                            '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800',
+                            '#ff5722'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+    </script>
+</body>
+</html>
